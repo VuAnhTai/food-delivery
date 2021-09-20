@@ -33,5 +33,9 @@ func (biz *listRestaurantBiz) ListRestaurant(
 		ctx, nil, filter, paging,
 	)
 
+	if err != nil {
+		return nil, common.ErrCannotListEntity(restaurantmodel.EntityName, err)
+	}
+
 	return data, err
 }

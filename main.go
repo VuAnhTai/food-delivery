@@ -2,6 +2,7 @@ package main
 
 import (
 	"food-delivery/component"
+	"food-delivery/middleware"
 	"food-delivery/modules/restaurant/restauranttransport/ginrestaurant"
 	"log"
 	"os"
@@ -25,14 +26,14 @@ func main() {
 }
 
 func runService(db *gorm.DB) error {
+	appCtx := component.NewAppContext(db)
 	r := gin.Default()
+	r.Use(middleware.Recover(appCtx))
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
-
-	appCtx := component.NewAppContext(db)
 
 	restaurants := r.Group("/restaurants")
 	{
