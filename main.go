@@ -36,26 +36,12 @@ func runService(db *gorm.DB) error {
 
 	restaurants := r.Group("/restaurants")
 	{
+		restaurants.GET("", ginrestaurant.ListRestaurant(appCtx))
+		restaurants.GET("/:id", ginrestaurant.GetRestaurant(appCtx))
 		restaurants.POST("", ginrestaurant.CreateRestaurant(appCtx))
+		restaurants.PATCH("/:id", ginrestaurant.UpdateRestaurant((appCtx)))
+		restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant((appCtx)))
+
 	}
 	return r.Run()
-}
-
-type Restaurant struct {
-	Id   int    `json:"id" gorm:"column:id;"`
-	Name string `json:"name" gorm:"column:name;"`
-	Addr string `json:"address" gorm:"column:addr;"`
-}
-
-func (Restaurant) TableName() string {
-	return "restaurants"
-}
-
-type RestaurantUpdate struct {
-	Name *string `json:"name" gorm:"column:name;"`
-	Addr *string `json:"address" gorm:"column:addr;"`
-}
-
-func (RestaurantUpdate) TableName() string {
-	return Restaurant{}.TableName()
 }
