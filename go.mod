@@ -3,6 +3,7 @@ module food-delivery
 go 1.16
 
 require (
+	github.com/aws/aws-sdk-go v1.40.47 // indirect
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
