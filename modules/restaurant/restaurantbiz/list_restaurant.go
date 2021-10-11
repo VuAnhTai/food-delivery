@@ -4,6 +4,7 @@ import (
 	"context"
 	"food-delivery/common"
 	"food-delivery/modules/restaurant/restaurantmodel"
+	"log"
 )
 
 type ListRestaurantStore interface {
@@ -16,12 +17,16 @@ type ListRestaurantStore interface {
 	) ([]restaurantmodel.Restaurant, error)
 }
 
+type LikeStore interface {
+	GetRestaurantLikes(ctx context.Context, ids []int) (map[int]int, error)
+}
 type listRestaurantBiz struct {
-	store ListRestaurantStore
+	store     ListRestaurantStore
+	likeStore LikeStore
 }
 
-func NewListRestaurantBiz(store ListRestaurantStore) *listRestaurantBiz {
-	return &listRestaurantBiz{store: store}
+func NewListRestaurantBiz(store ListRestaurantStore, likeStore LikeStore) *listRestaurantBiz {
+	return &listRestaurantBiz{store: store, likeStore: likeStore}
 }
 
 func (biz *listRestaurantBiz) ListRestaurant(
@@ -37,5 +42,22 @@ func (biz *listRestaurantBiz) ListRestaurant(
 		return nil, common.ErrCannotListEntity(restaurantmodel.EntityName, err)
 	}
 
+	ids := make([]int, len(data))
+
+	for i := range data {
+		ids[i] = data[i].Id
+	}
+
+	mapResLike, err := biz.likeStore.GetRestaurantLikes(ctx, ids)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	if v := mapResLike; v != nil {
+		for i, item := range data {
+			data[i].LikedCount = mapResLike[item.Id]
+		}
+	}
 	return data, err
 }
