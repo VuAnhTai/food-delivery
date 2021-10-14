@@ -7,7 +7,6 @@ import (
 	"food-delivery/modules/restaurant/restaurantmodel"
 	"food-delivery/modules/restaurant/restaurantstorage"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,14 +16,12 @@ func UpdateRestaurant(appCtx component.AppContext) gin.HandlerFunc {
 		var data restaurantmodel.RestaurantUpdate
 
 		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(401, gin.H{
-				"error": err.Error(),
-			})
-
-			return
+			panic(common.ErrInvalidRequest(err))
 		}
 
-		id, err := strconv.Atoi(c.Param("id"))
+		// id, err := strconv.Atoi(c.Param("id"))
+		uid, err := common.FromBase58(c.Param("id"))
+
 		if err != nil {
 			c.JSON(401, gin.H{
 				"error": err.Error(),
@@ -36,12 +33,8 @@ func UpdateRestaurant(appCtx component.AppContext) gin.HandlerFunc {
 		store := restaurantstorage.NewSQLStore(appCtx.GetMainDBConnection())
 		biz := restaurantbiz.NewUpdateRestaurantBiz(store)
 
-		if err := biz.UpdateRestaurant(c.Request.Context(), id, &data); err != nil {
-			c.JSON(401, map[string]interface{}{
-				"error": err.Error(),
-			})
-
-			return
+		if err := biz.UpdateRestaurant(c.Request.Context(), int(uid.GetLocalID()), &data); err != nil {
+			panic(err)
 		}
 
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))

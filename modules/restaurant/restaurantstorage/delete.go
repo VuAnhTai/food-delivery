@@ -5,7 +5,7 @@ import (
 	"food-delivery/modules/restaurant/restaurantmodel"
 )
 
-func (s *sqlStore) DeleteDataByCondition(
+func (s *sqlStore) SoftDeleteData(
 	ctx context.Context,
 	id int,
 ) error {
@@ -15,7 +15,7 @@ func (s *sqlStore) DeleteDataByCondition(
 		Where("id = ?", id).Updates(map[string]interface{}{
 		"status": 0,
 	}).Error; err != nil {
-		return err
+		panic(err)
 	}
 	return nil
 }

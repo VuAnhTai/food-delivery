@@ -6,6 +6,7 @@ import (
 	"food-delivery/modules/restaurant/restaurantbiz"
 	"food-delivery/modules/restaurant/restaurantmodel"
 	"food-delivery/modules/restaurant/restaurantstorage"
+	restaurantlikestorage "food-delivery/modules/restaurantlike/storage"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,35 +17,32 @@ func ListRestaurant(appCtx component.AppContext) gin.HandlerFunc {
 		var filter restaurantmodel.Filter
 
 		if err := c.ShouldBind(&filter); err != nil {
-			c.JSON(401, gin.H{
-				"error": err.Error(),
-			})
-
-			return
+			panic(common.ErrInvalidRequest(err))
 		}
 
 		var paging common.Paging
 		if err := c.ShouldBind(&paging); err != nil {
-			c.JSON(401, gin.H{
-				"error": err.Error(),
-			})
-
-			return
+			panic(common.ErrInvalidRequest(err))
 		}
 
 		paging.Fulfill()
 
 		store := restaurantstorage.NewSQLStore(appCtx.GetMainDBConnection())
-		biz := restaurantbiz.NewListRestaurantBiz(store)
+		likeStore := restaurantlikestorage.NewSQLStore(appCtx.GetMainDBConnection())
+		biz := restaurantbiz.NewListRestaurantBiz(store, likeStore)
 
 		result, err := biz.ListRestaurant(c.Request.Context(), &filter, &paging)
 
 		if err != nil {
-			c.JSON(401, map[string]interface{}{
-				"error": err.Error(),
-			})
+			panic(err)
+		}
 
-			return
+		for i := range result {
+			result[i].Mask(false)
+
+			if i == len(result)-1 { // shouldn't for client know logic how to get NextCursor
+				paging.NextCursor = result[i].FakeId.String()
+			}
 		}
 
 		c.JSON(http.StatusOK, common.NewSuccessResponse(result, paging, filter))

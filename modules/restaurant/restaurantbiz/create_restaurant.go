@@ -2,6 +2,7 @@ package restaurantbiz
 
 import (
 	"context"
+	"food-delivery/common"
 	"food-delivery/modules/restaurant/restaurantmodel"
 )
 
@@ -19,7 +20,7 @@ func NewCreateRestaurantBiz(store CreateRestaurantStore) *createRestaurantBiz {
 
 func (biz *createRestaurantBiz) CreateRestaurant(ctx context.Context, data *restaurantmodel.RestaurantCreate) error {
 	if err := data.Validate(); err != nil {
-		return err
+		return common.ErrInvalidRequest(err)
 	}
 
 	err := biz.store.Create(ctx, data)

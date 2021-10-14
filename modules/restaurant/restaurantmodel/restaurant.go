@@ -6,10 +6,15 @@ import (
 	"strings"
 )
 
+const EntityName = "Restaurant"
+
 type Restaurant struct {
 	common.SQLModel `json:",inline"` // inline return flat if no => create new object
 	Name            string           `json:"name" gorm:"column:name;"`
 	Addr            string           `json:"address" gorm:"column:addr;"`
+	Logo            *common.Image    `json:"logo" gorm:"column:logo;"`
+	Cover           *common.Images   `json:"cover" gorm:"column:cover;"`
+	LikedCount      int              `json:"liked_count" gorm:"-"`
 }
 
 func (Restaurant) TableName() string {
@@ -17,9 +22,12 @@ func (Restaurant) TableName() string {
 }
 
 type RestaurantCreate struct {
-	Id   int    `json:"id" gorm:"column:id;"`
-	Name string `json:"name" gorm:"column:name;"`
-	Addr string `json:"address" gorm:"column:addr;"`
+	common.SQLModel `json:",inline"` // inline return flat if no => create new object
+	Name            string           `json:"name" gorm:"column:name;"`
+	OwnerId         int              `json:"-" gorm:"column:owner_id;"`
+	Addr            string           `json:"address" gorm:"column:addr;"`
+	Logo            *common.Image    `json:"logo" gorm:"column:logo;"`
+	Cover           *common.Images   `json:"cover" gorm:"column:cover;"`
 }
 
 func (RestaurantCreate) TableName() string {
@@ -37,10 +45,16 @@ func (res *RestaurantCreate) Validate() error {
 }
 
 type RestaurantUpdate struct {
-	Name string `json:"name" gorm:"column:name;"`
-	Addr string `json:"address" gorm:"column:addr;"`
+	Name  string         `json:"name" gorm:"column:name;"`
+	Addr  string         `json:"address" gorm:"column:addr;"`
+	Logo  *common.Image  `json:"logo" gorm:"column:logo;"`
+	Cover *common.Images `json:"cover" gorm:"column:cover;"`
 }
 
 func (RestaurantUpdate) TableName() string {
 	return Restaurant{}.TableName()
+}
+
+func (data *Restaurant) Mask(isAdminOwner bool) {
+	data.GenUid(common.DbTypeRestaurant)
 }
