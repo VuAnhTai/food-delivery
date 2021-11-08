@@ -3,25 +3,21 @@ package rstlikebiz
 import (
 	"context"
 	"food-delivery/common"
-	"food-delivery/component/asyncjob"
 	restaurantlikemodel "food-delivery/modules/restaurantlike/model"
+	"food-delivery/pubsub"
 )
 
 type UserUnlikeRestaurantStore interface {
 	Delete(ctx context.Context, userId, restaurantId int) error
 }
 
-type DecreaseLikeCountStore interface {
-	DecreaseLikeCount(ctx context.Context, id int) error
-}
-
 type userUnlikeRestaurantBiz struct {
-	store    UserUnlikeRestaurantStore
-	decStore DecreaseLikeCountStore
+	store  UserUnlikeRestaurantStore
+	pubsub pubsub.Pubsub
 }
 
-func NewUserUnlikeRestaurantBiz(store UserUnlikeRestaurantStore, decStore DecreaseLikeCountStore) *userUnlikeRestaurantBiz {
-	return &userUnlikeRestaurantBiz{store: store, decStore: decStore}
+func NewUserUnlikeRestaurantBiz(store UserUnlikeRestaurantStore, pubsub pubsub.Pubsub) *userUnlikeRestaurantBiz {
+	return &userUnlikeRestaurantBiz{store: store, pubsub: pubsub}
 }
 
 func (biz *userUnlikeRestaurantBiz) UnlikeRestaurant(
@@ -36,16 +32,10 @@ func (biz *userUnlikeRestaurantBiz) UnlikeRestaurant(
 	}
 
 	// side effect
-	go func() {
-		defer common.AppRecover()
-		job := asyncjob.NewJob(func(ctx context.Context) error {
-			return biz.decStore.DecreaseLikeCount(ctx, restaurantId)
-		})
-
-		//job.SetRetryDurations([]time.Duration{time.Second * 3})
-
-		_ = asyncjob.NewGroup(true, job).Run(ctx)
-	}()
+	biz.pubsub.Publish(ctx, common.TopicUserDislikeRestaurant, pubsub.NewMessage(&restaurantlikemodel.Like{
+		RestaurantId: restaurantId,
+		UserId:       userId,
+	}))
 
 	return nil
 }

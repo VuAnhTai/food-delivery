@@ -9,6 +9,8 @@ import (
 	"food-delivery/modules/restaurantlike/transport/ginresturantlike"
 	"food-delivery/modules/upload/uploadtransport/ginupload"
 	"food-delivery/modules/user/usertransport/ginuser"
+	"food-delivery/pubsub/pblocal"
+	"food-delivery/subscriber"
 	"log"
 	"net/http"
 	"os"
@@ -44,7 +46,12 @@ func main() {
 }
 
 func runService(db *gorm.DB, s3Provider uploadprovider.UploadProvider, secretKey string) error {
-	appCtx := component.NewAppContext(db, s3Provider, secretKey)
+	appCtx := component.NewAppContext(db, s3Provider, secretKey, pblocal.NewPubSub())
+	//subscriber.Setup(appCtx)
+	if err := subscriber.NewEngine(appCtx).Start(); err != nil {
+		log.Fatalln(err)
+	}
+
 	r := gin.Default()
 	r.Use(middleware.Recover(appCtx))
 	r.GET("/ping", func(c *gin.Context) {
